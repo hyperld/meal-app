@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../../models/meal.dart';
+import '../../services/favorites_service.dart';
 
 /// Grid card widget to display a meal (image + name).
-class MealCard extends StatelessWidget {
+class MealCard extends StatefulWidget {
   const MealCard({
     Key? key,
     required this.meal,
@@ -14,26 +15,69 @@ class MealCard extends StatelessWidget {
   final VoidCallback? onTap;
 
   @override
+  State<MealCard> createState() => _MealCardState();
+}
+
+class _MealCardState extends State<MealCard> {
+  late FavoritesService _favoritesService;
+
+  @override
+  void initState() {
+    super.initState();
+    _favoritesService = FavoritesService();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: widget.onTap,
       child: Card(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+        child: Stack(
           children: [
-            // Image
-            Expanded(
-              child: _buildImage(),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Image
+                Expanded(
+                  child: _buildImage(),
+                ),
+                // Name
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text(
+                    widget.meal.name,
+                    style: Theme.of(context).textTheme.bodySmall,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ],
             ),
-            // Name
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Text(
-                meal.name,
-                style: Theme.of(context).textTheme.bodySmall,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
+            // Favorite button
+            Positioned(
+              top: 8,
+              right: 8,
+              child: GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _favoritesService.toggleFavorite(widget.meal);
+                  });
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.9),
+                    shape: BoxShape.circle,
+                  ),
+                  padding: const EdgeInsets.all(4),
+                  child: Icon(
+                    _favoritesService.isFavorite(widget.meal)
+                        ? Icons.favorite
+                        : Icons.favorite_border,
+                    color: Colors.red,
+                    size: 24,
+                  ),
+                ),
               ),
             ),
           ],
@@ -43,7 +87,7 @@ class MealCard extends StatelessWidget {
   }
 
   Widget _buildImage() {
-    final thumb = meal.thumbnail;
+    final thumb = widget.meal.thumbnail;
     if (thumb != null && thumb.isNotEmpty) {
       return ClipRRect(
         borderRadius: const BorderRadius.only(
